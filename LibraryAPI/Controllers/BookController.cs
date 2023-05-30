@@ -130,6 +130,59 @@ namespace LibraryAPI.Controllers
             return Ok(book);
         }
 
+        [HttpPut("takebooks/{id}")]
+        public IActionResult TakeBooks(int clientID, [FromBody] List<int> listOfBooks)
+        {
+            using (SqlConnection connection = new SqlConnection(_configuration.GetConnectionString("DevConnection")))
+            {
+                connection.Open();
+
+                // Update the IsAvailable field for matching ClientID and BookID rows
+                foreach (int bookID in listOfBooks)
+                {
+                    SqlCommand command = new SqlCommand("UPDATE Books SET IsAvailable = 0 WHERE ClientID = @ClientID AND BookID = @BookID", connection);
+                    command.Parameters.AddWithValue("@ClientID", clientID);
+                    command.Parameters.AddWithValue("@BookID", bookID);
+                    int rowsAffected = command.ExecuteNonQuery();
+
+                    if (rowsAffected == 0)
+                    {
+                        // If no rows were updated, return a not found response
+                        return NotFound();
+                    }
+                }
+            }
+
+            return NoContent();
+        }
+
+
+        [HttpPut("returnbooks/{id}")]
+        public IActionResult ReturnBooks(int clientID, [FromBody] List<int> listOfBooks)
+        {
+            using (SqlConnection connection = new SqlConnection(_configuration.GetConnectionString("DevConnection")))
+            {
+                connection.Open();
+
+                // Update the IsAvailable field for matching ClientID and BookID rows
+                foreach (int bookID in listOfBooks)
+                {
+                    SqlCommand command = new SqlCommand("UPDATE Books SET IsAvailable = 1 WHERE ClientID = @ClientID AND BookID = @BookID", connection);
+                    command.Parameters.AddWithValue("@ClientID", clientID);
+                    command.Parameters.AddWithValue("@BookID", bookID);
+                    int rowsAffected = command.ExecuteNonQuery();
+
+                    if (rowsAffected == 0)
+                    {
+                        // If no rows were updated, return a not found response
+                        return NotFound();
+                    }
+                }
+            }
+
+            return NoContent();
+        }
+
         [HttpDelete("{id}")]
         public IActionResult Delete(int id)
         {
