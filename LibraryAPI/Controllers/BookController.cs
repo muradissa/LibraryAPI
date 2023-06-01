@@ -46,7 +46,6 @@ namespace LibraryAPI.Controllers
                     books.Add(book);
                 }
             }
-
             return Ok(books);
         }
 
@@ -81,6 +80,67 @@ namespace LibraryAPI.Controllers
 
             return Ok(book);
         }
+        [HttpGet("clientbooks/{id}")]
+        public IActionResult GetClientBooks(int id)
+        {
+            List<Book> books = new List<Book>();
+
+            using (SqlConnection connection = new SqlConnection(_configuration.GetConnectionString("DevConnection")))
+            {
+                connection.Open();
+                SqlCommand command = new SqlCommand("SELECT * FROM Books WHERE ClientID = @clientID", connection);
+                command.Parameters.AddWithValue("@clientID", id);
+                SqlDataReader reader = command.ExecuteReader();
+
+                while (reader.Read())
+                {
+                    Book book = new Book
+                    {
+                        BookID = Convert.ToInt32(reader["BookID"]),
+                        Name = reader["Name"].ToString(),
+                        Author = reader["Author"].ToString(),
+                        Year = Convert.ToInt32(reader["Year"]),
+                        IsAvailable = Convert.ToBoolean(reader["IsAvailable"]),
+                        ClientID = Convert.ToInt32(reader["ClientID"])
+                    };
+                    books.Add(book);
+                }
+            }
+            return Ok(books);
+
+        }
+
+
+
+        [HttpGet("availableBooks")]
+        public IActionResult GetAvailableBooks()
+        {
+            List<Book> books = new List<Book>();
+
+            using (SqlConnection connection = new SqlConnection(_configuration.GetConnectionString("DevConnection")))
+            {
+                connection.Open();
+                SqlCommand command = new SqlCommand("SELECT * FROM Books WHERE IsAvailable = 1", connection);
+                SqlDataReader reader = command.ExecuteReader();
+
+                while (reader.Read())
+                {
+                    Book book = new Book
+                    {
+                        BookID = Convert.ToInt32(reader["BookID"]),
+                        Name = reader["Name"].ToString(),
+                        Author = reader["Author"].ToString(),
+                        Year = Convert.ToInt32(reader["Year"]),
+                        IsAvailable = Convert.ToBoolean(reader["IsAvailable"]),
+                        ClientID = Convert.ToInt32(reader["ClientID"])
+                    };
+                    books.Add(book);
+                }
+            }
+            return Ok(books);
+        }
+
+
 
         [HttpPost]
         public IActionResult Post([FromBody] Book book)
@@ -104,6 +164,8 @@ namespace LibraryAPI.Controllers
 
             return Ok(book);
         }
+
+
 
         [HttpPut("{id}")]
         public IActionResult Put(int id, [FromBody] Book book)
@@ -130,8 +192,10 @@ namespace LibraryAPI.Controllers
             return Ok(book);
         }
 
+
+
         [HttpPut("takebooks/{id}")]
-        public IActionResult TakeBooks(int clientID, [FromBody] List<int> listOfBooks)
+        public IActionResult TakeBooks(int clientID, [FromBody] int[] listOfBooks)
         {
             using (SqlConnection connection = new SqlConnection(_configuration.GetConnectionString("DevConnection")))
             {
@@ -140,7 +204,7 @@ namespace LibraryAPI.Controllers
                 // Update the IsAvailable field for matching ClientID and BookID rows
                 foreach (int bookID in listOfBooks)
                 {
-                    SqlCommand command = new SqlCommand("UPDATE Books SET IsAvailable = 0 WHERE ClientID = @ClientID AND BookID = @BookID", connection);
+                    SqlCommand command = new SqlCommand("UPDATE Books SET IsAvailable = 0 ,ClientID = @ClientID WHERE BookID = @BookID", connection);
                     command.Parameters.AddWithValue("@ClientID", clientID);
                     command.Parameters.AddWithValue("@BookID", bookID);
                     int rowsAffected = command.ExecuteNonQuery();
@@ -152,13 +216,15 @@ namespace LibraryAPI.Controllers
                     }
                 }
             }
-
-            return NoContent();
+            return Ok();
+           // return NoContent();
         }
+
+
 
 
         [HttpPut("returnbooks/{id}")]
-        public IActionResult ReturnBooks(int clientID, [FromBody] List<int> listOfBooks)
+        public IActionResult ReturnBooks(int clientID, [FromBody] int[] listOfBooks)
         {
             using (SqlConnection connection = new SqlConnection(_configuration.GetConnectionString("DevConnection")))
             {
@@ -167,7 +233,8 @@ namespace LibraryAPI.Controllers
                 // Update the IsAvailable field for matching ClientID and BookID rows
                 foreach (int bookID in listOfBooks)
                 {
-                    SqlCommand command = new SqlCommand("UPDATE Books SET IsAvailable = 1 WHERE ClientID = @ClientID AND BookID = @BookID", connection);
+                    //SqlCommand command = new SqlCommand("UPDATE Books SET IsAvailable = 1 WHERE ClientID = @ClientID AND BookID = @BookID", connection);
+                    SqlCommand command = new SqlCommand("UPDATE Books SET IsAvailable = 1 ,ClientID = 0 WHERE ClientID = @ClientID AND BookID = @BookID", connection);
                     command.Parameters.AddWithValue("@ClientID", clientID);
                     command.Parameters.AddWithValue("@BookID", bookID);
                     int rowsAffected = command.ExecuteNonQuery();
@@ -179,9 +246,11 @@ namespace LibraryAPI.Controllers
                     }
                 }
             }
-
-            return NoContent();
+            return Ok();
+            // return NoContent();
         }
+
+
 
         [HttpDelete("{id}")]
         public IActionResult Delete(int id)
